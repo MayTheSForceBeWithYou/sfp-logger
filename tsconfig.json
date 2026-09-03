@@ -8,6 +8,7 @@
       "rootDir": "./src",
       "inlineSourceMap": true,
       "declaration": true,
+      "declarationMap": true,
       "noImplicitAny": false,
       "esModuleInterop": true,
       "module": "commonjs",
@@ -18,6 +19,6 @@
       "resolveJsonModule": true,
       "skipLibCheck": true
   },
-  "exclude": ["node_modules", "lib"],
-  "include": ["./src/**/*"]
+  "exclude": ["node_modules", "lib", "tests"],
+  "include": ["./src/SFPLogger.ts"]
 }

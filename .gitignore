@@ -1,2 +1,29 @@
-node_modules
+# dependencies
+node_modules/
+
+# compiled output (built on publish via prepublishOnly)
+lib/
+tsconfig.tsbuildinfo
+
+# npm pack / unpacked tarball
+*.tgz
+/package/
+
+# tests
+coverage/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env
+.env
+.env.*
+
+# OS
 .DS_Store
+Thumbs.db
+
+# local working notes
+CURSOR_PLAN.md

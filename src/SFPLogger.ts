@@ -1,6 +1,7 @@
 import * as fs from 'fs-extra';
 import { EOL } from 'os';
 import chalk = require('chalk');
+import stripAnsi = require('strip-ansi');
 
 export enum LoggerLevel {
     TRACE = 10,
@@ -12,32 +13,41 @@ export enum LoggerLevel {
     HIDE = 70,
 }
 
-const enum LoggerType {
-    console = 1,
-    file = 2,
-    void = 3,
+export enum LoggerType {
+    CONSOLE = 0,
+    FILE = 1,
+    VOID = 2,
 }
+
+export interface Logger {
+    logType: LoggerType | string;
+    path?: string;
+    log(message: string, logLevel: LoggerLevel): void;
+}
+
 export class ConsoleLogger implements Logger {
-    public logType: LoggerType;
-    constructor() {
-        this.logType = LoggerType.console;
+    public logType: LoggerType = LoggerType.CONSOLE;
+    public log(message: string, logLevel: LoggerLevel): void {
+        SFPLogger.log(message, logLevel);
     }
 }
+
 export class VoidLogger implements Logger {
-    public logType: LoggerType;
-    constructor() {
-        this.logType = LoggerType.void;
+    public logType: LoggerType = LoggerType.VOID;
+    public log(message: string, logLevel: LoggerLevel): void {
+        // Do nothing
     }
 }
+
 export class FileLogger implements Logger {
     public logType: LoggerType;
     constructor(public path: string) {
-        this.logType = LoggerType.file;
+        this.logType = LoggerType.FILE;
     }
-}
-export interface Logger {
-    logType: LoggerType;
-    path?: string;
+    public log(message: string, logLevel: LoggerLevel): void {
+        message = stripAnsi(message?.toString());
+        fs.appendFileSync(this.path, message + EOL, 'utf8');
+    }
 }
 
 export const COLOR_ERROR = chalk.bold.red;
@@ -64,55 +74,61 @@ export default class SFPLogger {
     }
 
     static log(message: string, logLevel = LoggerLevel.INFO, logger?: Logger) {
-        if (SFPLogger.isLogsDisabled)
-            return;
-            if (logLevel == null) logLevel = LoggerLevel.INFO;
+        if (SFPLogger.isLogsDisabled) return;
 
-            if (logLevel < this.logLevel) return;
+        if (logLevel == null) logLevel = LoggerLevel.INFO;
 
-            //Todo: Proper fix
-            if (logger && logger.logType === LoggerType.console) {
-                logger = null; //Make it nullable, so it goes to console
-            }
+        if (logLevel < this.logLevel) return;
 
-            if (logger) {
-                if (logger.logType === LoggerType.void) {
-                    return;
-                } else if (logger.logType === LoggerType.file) {
-                    let fileLogger = logger as FileLogger;
-                    message = message
-                        ?.toString()
-                        .replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
-                    fs.appendFileSync(fileLogger.path, message + EOL, 'utf8');
-                }
-            } else {
-                switch (logLevel) {
-                    case LoggerLevel.TRACE:
-                        console.log(COLOR_TRACE(message));
-                        break;
+        if (logger) {
+            logger.log(message, logLevel);
+        } else {
+            SFPLogger.consoleLog(message, logLevel);
+        }
+    }
 
-                    case LoggerLevel.DEBUG:
-                        console.log(COLOR_DEBUG(message));
-                        break;
+    private static consoleLog(message: string, logLevel: LoggerLevel) {
+        switch (logLevel) {
+            case LoggerLevel.TRACE:
+                console.log(COLOR_TRACE(message));
+                break;
 
-                    case LoggerLevel.INFO:
-                        console.log(message);
-                        break;
+            case LoggerLevel.DEBUG:
+                console.log(COLOR_DEBUG(message));
+                break;
 
-                    case LoggerLevel.WARN:
-                        console.log(COLOR_WARNING(message));
-                        break;
+            case LoggerLevel.INFO:
+                console.log(message);
+                break;
 
-                    case LoggerLevel.ERROR:
-                        console.log(COLOR_ERROR(message));
-                        break;
-                }
+            case LoggerLevel.WARN:
+                console.log(COLOR_WARNING(message));
+                break;
 
-            }
-
+            case LoggerLevel.ERROR:
+                console.log(COLOR_ERROR(message));
+                break;
+        }
     }
 
     static disableLogs() {
         SFPLogger.isLogsDisabled = true;
+    }
+
+    static printHeaderLine(header: string, color: chalk.Chalk, logLevel: LoggerLevel, logger?: Logger) {
+        if (SFPLogger.isLogsDisabled) return;
+
+        if (header == null) header = '';
+
+        const lineLength = 90;
+        const leftPadLength = Math.floor((lineLength - header.length) / 2);
+        const rightPadLength = lineLength - leftPadLength - header.length;
+        const line = '-'.repeat(leftPadLength) + `${header}` + '-'.repeat(rightPadLength);
+
+        if (logger) {
+            logger.log(color(line), logLevel);
+        } else {
+            console.log(color(line));
+        }
     }
 }
