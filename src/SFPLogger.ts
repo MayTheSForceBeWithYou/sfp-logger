@@ -59,7 +59,10 @@ export const COLOR_HEADER = chalk.yellowBright.bold;
 export const COLOR_SUCCESS = chalk.green.bold;
 export const COLOR_TIME = chalk.magentaBright;
 export const COLOR_KEY_MESSAGE = chalk.magentaBright.bold;
-export const COLOR_KEY_VALUE = chalk.black.bold.bgGreenBright;
+// No background colour: `black` + `bold` was unreadable wherever a terminal promotes bold-black
+// to bright black, or drops the foreground and leaves dark-on-bright-green (the Azure DevOps log
+// viewer does exactly that). A bright foreground alone stays legible on light and dark alike.
+export const COLOR_KEY_VALUE = chalk.greenBright.bold;
 
 export default class SFPLogger {
     public static logLevel: LoggerLevel = LoggerLevel.INFO;
